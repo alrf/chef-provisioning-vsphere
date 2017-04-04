@@ -100,7 +100,8 @@ module ChefProvisioningVsphere
         :startConnected => true)
       device = RbVmomi::VIM::VirtualVmxnet3(
         :backing => backing_info,
-        :deviceInfo => RbVmomi::VIM::Description(:label => network_label, :summary => network_name.split('/').last),
+        #:deviceInfo => RbVmomi::VIM::Description(:label => network_label, :summary => network_name.split('/').last),
+        :deviceInfo => RbVmomi::VIM::Description(:label => network_label, :summary => network_name),
         :key => device_key,
         :connectable => connectable)
       RbVmomi::VIM::VirtualDeviceConfigSpec(
@@ -186,12 +187,16 @@ module ChefProvisioningVsphere
       if networks.kind_of?(String)
         networks=[networks]
       end
+      network_name_separator = options[:network_name_separator]
 
       cards = find_ethernet_cards_for(vm_template)
 
       key = 4000
       networks.each_index do | i |
-        label = "Ethernet #{i+1}"
+        #label = "Ethernet #{i+1}"
+        label = "Ethernet#{i}"
+        networks[i] = networks[i].split(network_name_separator).last
+
         backing_info = backing_info_for(action_handler, networks[i])
         if card = cards.shift
           key = card.key
@@ -224,7 +229,8 @@ module ChefProvisioningVsphere
           :port => port)
       else
         RbVmomi::VIM::VirtualEthernetCardNetworkBackingInfo(
-          deviceName: network_name.split('/').last)
+          #deviceName: network_name.split('/').last)
+          deviceName: network_name)
       end
     end
 
@@ -296,7 +302,8 @@ module ChefProvisioningVsphere
 
     def find_network(name)
       base = datacenter.networkFolder
-      entity_array = name.split('/').reject(&:empty?)
+      #entity_array = name.split('/').reject(&:empty?)
+      entity_array = name.split.reject(&:empty?)
       entity_array.each do |item|
         case base
         when RbVmomi::VIM::Folder
